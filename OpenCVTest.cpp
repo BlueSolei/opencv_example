@@ -1,20 +1,57 @@
-// OpenCVTest.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
-
 #include <iostream>
-
-int main()
-{
-    std::cout << "Hello World!\n";
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/videoio.hpp>
+#include <stdio.h>
+using namespace cv;
+using namespace std;
+int main(int, char **) {
+  Mat src;
+  // use default camera as video source
+  VideoCapture cap(0);
+  // check if we succeeded
+  if (!cap.isOpened()) {
+    cerr << "ERROR! Unable to open camera\n";
+    return -1;
+  }
+  // get one frame from camera to know frame size and type
+  cap >> src;
+  // check if we succeeded
+  if (src.empty()) {
+    cerr << "ERROR! blank frame grabbed\n";
+    return -1;
+  }
+  bool isColor = (src.type() == CV_8UC3);
+  //--- INITIALIZE VIDEOWRITER
+  VideoWriter writer;
+  int codec = VideoWriter::fourcc(
+      'M', 'J', 'P',
+      'G');          // select desired codec (must be available at runtime)
+  double fps = 25.0; // framerate of the created video stream
+  string filename = "./live.avi"; // name of the output video file
+  writer.open(filename, codec, fps, src.size(), isColor);
+  // check if we succeeded
+  if (!writer.isOpened()) {
+    cerr << "Could not open the output video file for write\n";
+    return -1;
+  }
+  //--- GRAB AND WRITE LOOP
+  cout << "Writing videofile: " << filename << endl
+       << "Press any key to terminate" << endl;
+  for (;;) {
+    // check if we succeeded
+    if (!cap.read(src)) {
+      cerr << "ERROR! blank frame grabbed\n";
+      break;
+    }
+    // encode the frame into the videofile stream
+    writer.write(src);
+    // show live and wait for a key with timeout long enough to show images
+    imshow("Live", src);
+    if (waitKey(5) >= 0)
+      break;
+  }
+  // the videofile will be closed and released automatically in VideoWriter
+  // destructor
+  return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
